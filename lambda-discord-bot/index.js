@@ -35,11 +35,19 @@ exports.handler = async (event) => {
     }
 
 
-      // Handle /foo Command
+    // Handle /list_ec2 Command
     if (body.data.name == 'list_ec2') {
         return JSON.stringify({  // Note the absence of statusCode
         "type": 4,  // This type stands for answer with invocation shown
         "data": { "content": "bar" }
+        })
+    }
+
+        // Handle /sopt_ec2 Command
+    if (body.data.name == 'stop_ec2') {
+        return JSON.stringify({  // Note the absence of statusCode
+        "type": 4,  // This type stands for answer with invocation shown
+        "data": { "content":  `Successfully stopped ec2: ${body.data.options[0].value}`}
         })
     }
 

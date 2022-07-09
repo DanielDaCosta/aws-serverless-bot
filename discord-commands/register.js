@@ -19,3 +19,19 @@ let command_data = {
 axios.post(url, JSON.stringify(command_data), {
   headers: headers,
 })
+
+command_data = {
+  "name": "stop_ec2",
+  "type": 1,
+  "description": "Stop EC2 instances",
+  "options": [{
+    "name": "ec2_name",
+    "description": "Name of the ec2 instance",
+    "type": 3,
+    "required": true
+  }]
+}
+
+axios.post(url, JSON.stringify(command_data), {
+  headers: headers,
+})
