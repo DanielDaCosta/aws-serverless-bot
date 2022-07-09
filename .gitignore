@@ -1,3 +1,6 @@
+*.env
+register-commands/.env
+
 # Local .terraform directories
 **/.terraform/*
 
