@@ -38,74 +38,98 @@ exports.handler = async (event) => {
         };
     }
 
-    // Handle /list_ec2 Command
-    if (body.data.name == 'list_ec2') {
-        var params = {
-          Filters: [
-            {
-              Name: 'instance-state-name',
-              Values: ['running']
-            }]
-        };
-    
-        let ec2_data = await ec2.describeInstances(params).promise()
-        // Retrieving Instance Name based on Tag:Name or InstanceId
-        var arrInstanceNames = ec2_data.Reservations.map(
-          instanceObj => {
-            var instanceName = instanceObj.Instances[0].Tags.filter(_ => _.Key == 'Name')[0]
-            return typeof(instanceName) === 'undefined' ? instanceObj.Instances[0].InstanceId : instanceName 
-          });
-        let discordOuput = arrInstanceNames.map(
-          instanceName => {
-            if (typeof(instanceName) == 'object')
-            {
-              return instanceName.Value
-            }
-            else
-              return instanceName
-        });           // successful response
-        
-        // console.log(`Aqui: ${discordOuput.toString()[0]}`)
-        // return setTimeout(function() {
-        return JSON.stringify({  // Note the absence of statusCode
-          "type": 4,  // This type stands for answer with invocation shown
-          "data": { "content": 'Ok' }
+      // Handle command (send to SNS and split to one of Lambdas)
+    if (body.data.name) {
+      var eventText = JSON.stringify(body, null, 2);
+      var params = {
+          Message: eventText,
+          Subject: "Test SNS From Lambda",
+          TopicArn: process.env.TOPIC_ARN,
+          MessageAttributes: { 
+            "command": { DataType: 'String', StringValue: body.data.name },
+            "event_type": { DataType: 'String', StringValue: "ec2" },
+         }
+      };
+      // Create promise and SNS service object
+      await new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          "type": 4,
+          "data": { "content": "*Loading...*" }
         })
+      }
     }
 
+    // // Handle /list_ec2 Command
+    // if (body.data.name == 'list_ec2') {
+    //     var params = {
+    //       Filters: [
+    //         {
+    //           Name: 'instance-state-name',
+    //           Values: ['running']
+    //         }]
+    //     };
+    
+    //     let ec2_data = await ec2.describeInstances(params).promise()
+    //     // Retrieving Instance Name based on Tag:Name or InstanceId
+    //     var arrInstanceNames = ec2_data.Reservations.map(
+    //       instanceObj => {
+    //         var instanceName = instanceObj.Instances[0].Tags.filter(_ => _.Key == 'Name')[0]
+    //         return typeof(instanceName) === 'undefined' ? instanceObj.Instances[0].InstanceId : instanceName 
+    //       });
+    //     let discordOuput = arrInstanceNames.map(
+    //       instanceName => {
+    //         if (typeof(instanceName) == 'object')
+    //         {
+    //           return instanceName.Value
+    //         }
+    //         else
+    //           return instanceName
+    //     });           // successful response
+        
+    //     // console.log(`Aqui: ${discordOuput.toString()[0]}`)
+    //     // return setTimeout(function() {
+    //     return JSON.stringify({  // Note the absence of statusCode
+    //       "type": 4,  // This type stands for answer with invocation shown
+    //       "data": { "content": 'Ok' }
+    //     })
+    // }
+
     // Handle /sopt_ec2 Command
-    if (body.data.name == 'stop_ec2') {
-      let instanceName = body.data.options[0].value
-      var params = {
-        Filters: [
-          {
-            Name: 'tag:Name',
-            Values: [instanceName]
-          }]
-      };
+    // if (body.data.name == 'stop_ec2') {
+    //   let instanceName = body.data.options[0].value
+    //   var params = {
+    //     Filters: [
+    //       {
+    //         Name: 'tag:Name',
+    //         Values: [instanceName]
+    //       }]
+    //   };
       
-      let ec2_data = await ec2.describeInstances(params).promise()
-      // Retrieving Instance Name based on Tag:Name
-      var discordOuput
-      if (ec2_data.Reservations.length == 0)  
-        discordOuput = 'EC2 not found'
-      else
-        var instanceId = ec2_data.Reservations[0].Instances[0].InstanceId
-        params = {
-          InstanceIds: [
-            instanceId
-        ]}
-        await ec2.stopInstances(params).promise()
-        discordOuput = 'Stopped'
-      return JSON.stringify({  // Note the absence of statusCode
-        "type": 4,  // This type stands for answer with invocation shown
-        "data": { "content":  `${discordOuput}`}
-      })
+    //   let ec2_data = await ec2.describeInstances(params).promise()
+    //   // Retrieving Instance Name based on Tag:Name
+    //   var discordOuput
+    //   if (ec2_data.Reservations.length == 0)  
+    //     discordOuput = 'EC2 not found'
+    //   else
+    //     var instanceId = ec2_data.Reservations[0].Instances[0].InstanceId
+    //     params = {
+    //       InstanceIds: [
+    //         instanceId
+    //     ]}
+    //     await ec2.stopInstances(params).promise()
+    //     discordOuput = 'Stopped'
+    //   return JSON.stringify({  // Note the absence of statusCode
+    //     "type": 4,  // This type stands for answer with invocation shown
+    //     "data": { "content":  `${discordOuput}`}
+    //   })
       // return {
       //       statusCode: 200,
       //       body: JSON.stringify({ "type": 1 }),
       // };
-    }
+    // }
 
     return {
         statusCode: 404  // If no handler implemented for Discord's request

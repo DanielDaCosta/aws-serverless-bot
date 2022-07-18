@@ -1,3 +1,5 @@
+lambda-test
+
 *.env
 register-commands/.env
 
